@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <stdarg.h>
 
-#define ENABLE_DEBUG false
+#define ENABLE_DEBUG true
 
 enum LogType
 {
@@ -15,7 +15,8 @@ enum LogType
   LOG_OUTMSG,
   LOG_ACK,
   LOG_NACK,
-  LOG_CMD
+  LOG_CMD,
+  LOG_NONE
 };
 
 class Logger
@@ -99,6 +100,8 @@ private:
       return "[NACK]";
     case LOG_CMD:
       return "[CMD]";
+    case LOG_NONE:
+      return "";
     default:
       return "";
     }

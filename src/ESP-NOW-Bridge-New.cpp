@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include "globals.h"    //gloval variables
-#include "func.h"       //global functions
-#include "bridgeLoop.h" //main loop function
+#include <globals.h>   //gloval variables
+#include <func.h>       //global functions
+#include <bridgeLoop.h> //main loop function
 #if defined(ESP8266)
 #include "esp8266/espnow8266.h"
 #include "esp8266/commands.h" //commands
@@ -65,5 +65,6 @@ void loop()
 {
 
   checkTimeOuts();
-  bridgeLoop();
+  bridgeLoop(Serial);
+
 }

@@ -1,8 +1,8 @@
 #include <cstdlib>
 #ifndef COMMANDS_H
 #define COMMANDS_H
-#include "../globals.h"
-#include "../func.h"
+#include <globals.h>
+#include <func.h>
 #include "espnow8266.h"
 // Saves MAC address to the flash
 void addrecv(uint8_t *mac)
@@ -33,6 +33,7 @@ void deletePeer()
 void reboot()
 {
   logger.log(LOG_INFO, "REBOOTING...");
+  logger2.log(LOG_INFO, "REBOOTING...");
   Serial.flush();
   Serial.end();
   delay(1E3);
@@ -94,12 +95,10 @@ void printSystemInfo()
   info += "Baud Rate: " + String(baudRate) + endLine;
   info += "Peer MAC: " + macToString(peerAddress) + endLine;
   info += "GPIO count: " + String(GPIO_COUNT) + endLine;
-  #if !defined(ARDUINO_ESP8266_ESP01)
   info += "Second serial port: TX=" + String(TX_1)+ endLine;
-  #endif
   info += "========================\n";
 
-  Serial.print(info);
+  logger.log(LOG_NONE, info);
 }
 
 // Handle commands
@@ -197,7 +196,8 @@ void handleCommand(String input)
       {
         String msg = input.substring(input.indexOf(commStart) + 1, input.indexOf(argStart));
 
-        esp_now_send(tempMac, (uint8_t *)msg.c_str(), msg.length());
+        //esp_now_send(tempMac, (uint8_t *)msg.c_str(), msg.length());
+        sendMsg(MSG, tempMac, &msg);
         logger.log(LOG_OUTMSG, "SEND: " + msg);
         logger.log(LOG_INFO, "OK");
       }
