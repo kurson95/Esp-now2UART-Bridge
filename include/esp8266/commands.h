@@ -33,7 +33,6 @@ void deletePeer()
 void reboot()
 {
   logger.log(LOG_INFO, "REBOOTING...");
-  logger2.log(LOG_INFO, "REBOOTING...");
   Serial.flush();
   Serial.end();
   delay(1E3);

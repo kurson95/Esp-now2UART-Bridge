@@ -11,14 +11,14 @@
 #endif
 void setup()
 {
-  Serial.begin(BAUD_RATE);
+  SerialOut->begin(BAUD_RATE);
 #ifdef ESP8266
   Serial1.begin(BAUD_RATE);
 #elif defined(ESP32)
   Serial1.begin(BAUD_RATE, SERIAL_8N1, RX_1, TX_1);
 #endif
-  Serial.flush();
-  Serial.end();
+  SerialOut->flush();
+  SerialOut->end();
   pinMode(BTN, INPUT_PULLUP);
   prefs.begin("serial", false);
   // Check , if value storing autosend state is in flash
@@ -37,10 +37,10 @@ void setup()
   autoSend = prefs.getBool("autoSend");
   baudRate = prefs.getLong("baudRate");
   prefs.end();
-  Serial.begin(baudRate);
-  Serial.flush();
-  Serial.println();
-  Serial.printf("---| ESP-NOW2UART BRIDGE V0.1.0 |---\nBRCMD+COMMAND=ARG1%sARG2%s\n", argStart, endLine);
+  SerialOut->begin(baudRate);
+  SerialOut->flush();
+  SerialOut->println();
+  SerialOut->printf("---| ESP-NOW2UART BRIDGE V0.1.0 |---\nBRCMD+COMMAND=ARG1%sARG2%s\n", argStart, endLine);
   listAvailableCommands();
   // Same procedure as above, but for MAC address and encryption state
   prefs.begin("mac", false);
@@ -65,6 +65,7 @@ void loop()
 {
 
   checkTimeOuts();
-  bridgeLoop(Serial);
+  bridgeLoop();
+  delay(10);
 
 }

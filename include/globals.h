@@ -24,8 +24,9 @@ extern "C"
 #define MSG_MAX 128
 unsigned long baudRate;
 bool autoSend = true;
-Logger logger(Serial);
-Logger logger2(Serial1);
+HardwareSerial* SerialOut = &Serial; 
+
+Logger logger(*SerialOut);
 
 static const char endLine[2] = "\n";
 static const char argStart[2] = ",";
@@ -33,7 +34,6 @@ static const char commStart[2] = "=";
 
 const long allowedBaudRates[] = {300, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 230400, 250000};
 
-static String buffer = "";
 Preferences prefs;
 
 uint8_t peerAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};

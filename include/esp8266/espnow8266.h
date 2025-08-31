@@ -90,31 +90,25 @@ void OnDataRecv(uint8_t *mac_addr, uint8_t *incomingData, uint8_t len)
     case MSG: {
       // msgContent jest teraz char[]
       logger.logf(LOG_INMSG, "(%s) %s", mac.c_str(), incomingMsg.msgContent);
-      logger2.logf(LOG_INMSG, "(%s) %s", mac.c_str(), incomingMsg.msgContent);
       break;
     }
     case CMD: {
       logger.logf(LOG_DEBUG, "(%s) CMD received: cmd=%d, arg1=%s, arg2=%s", mac.c_str(),
                   incomingMsg.cmd, incomingMsg.arg1, incomingMsg.arg2);
-      logger2.logf(LOG_DEBUG, "(%s) CMD received: cmd=%d, arg1=%s, arg2=%s", mac.c_str(),
-                   incomingMsg.cmd, incomingMsg.arg1, incomingMsg.arg2);
       // przekazujemy const char* (char[]) — dopasuj jeśli funkcja oczekuje Stringów
       handleCommandFromESPNow(incomingMsg.cmd, incomingMsg.arg1, incomingMsg.arg2);
       break;
     }
     case ACK: {
       logger.log(LOG_ACK, mac);
-      logger2.log(LOG_ACK, mac);
       break;
     }
     case NACK: {
       logger.log(LOG_NACK, mac);
-      logger2.log(LOG_NACK, mac);
       break;
     }
     default:
       logger.log(LOG_ERROR, "Unknown message type");
-      logger2.log(LOG_ERROR, "Unknown message type");
       break;
     }
   }

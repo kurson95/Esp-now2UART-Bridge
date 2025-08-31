@@ -11,11 +11,12 @@
 #include <esp32/commands32.h>
 #endif
 // Main loop function
-String bridgeLoop(Stream &input)
+void bridgeLoop()
 {
-    while (input.available())
+    while (SerialOut->available())
     {
-        char c = input.read();
+        static String buffer = "";
+        char c = SerialOut->read();
         if (c == '\n')//end of line reached
         {
             buffer.trim();//remove whitespace
@@ -46,7 +47,6 @@ String bridgeLoop(Stream &input)
                     #endif
                                             logger.log(LOG_OUTMSG, buffer);
                     
-                                            logger2.log(LOG_OUTMSG, buffer);
                                         }
                     else
                     {
@@ -61,6 +61,5 @@ String bridgeLoop(Stream &input)
             buffer += c;
         }
     }
-    return buffer;
 }
 #endif

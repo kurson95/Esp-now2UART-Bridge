@@ -17,9 +17,8 @@ void addrecv(uint8_t *mac)
 void reboot()
 {
   logger.log(LOG_INFO, "REBOOTING...");
-  logger2.log(LOG_INFO, "REBOOTING...");
-  Serial.flush();
-  Serial.end();
+  SerialOut->flush();
+  SerialOut->end();
   delay(1E3);
   ESP.restart();
 }
@@ -75,7 +74,6 @@ void setBaudRate(long baud)
   else
   {
     logger.log(LOG_ERROR, "Invalid argument");
-    logger2.log(LOG_ERROR, "Invalid argument");
   }
 }
 void printSystemInfo()
@@ -104,7 +102,6 @@ void printSystemInfo()
   info += "========================\n";
 
   logger.log(LOG_NONE, info);
-  logger2.log(LOG_NONE, info);
 }
 
 // Handle commands
@@ -121,18 +118,15 @@ void handleCommand(String input)
     if (!parseMacAddress(subcmd, peerAddress))
     {
       logger.log(LOG_ERROR, "Invalid MAC");
-      logger2.log(LOG_ERROR, "Invalid MAC");
     }
     else
     {
       // logger.log(LOG_INFO,"OK");
      // esp_now_del_peer(peerAddress);
       logger.log(LOG_INFO, macToString(peerAddress));
-      logger2.log(LOG_INFO, macToString(peerAddress));
       addrecv(peerAddress);
       bool addstat = setEspNowPeer(peerAddress,1);
       logger.log(LOG_INFO, addstat ? "OK" : "ERROR");
-      logger2.log(LOG_INFO, addstat ? "OK" : "ERROR");
       setENC(1);
     }
     break;
@@ -140,10 +134,8 @@ void handleCommand(String input)
   case SHOWMAC:
   {
     logger.log(LOG_CMD,input);
-    logger2.log(LOG_CMD,input);
     // logger.log(LOG_INFO, "OK");
     logger.log(LOG_INFO, "MAC: " + macaddr);
-    logger2.log(LOG_INFO, "MAC: " + macaddr);
     // Odczytaj i wypisz MAC
     break;
   }
@@ -153,22 +145,18 @@ void handleCommand(String input)
     deletePeer();
     setENC(0);
     logger.log(LOG_INFO,"OK");
-    logger2.log(LOG_INFO,"OK");
     break;
   }
   case SHOWRECV:
   {
     logger.log(LOG_CMD,input);
-    logger2.log(LOG_CMD,input);
     // logger.log(LOG_INFO, "OK");
     logger.log(LOG_INFO, "RECV: " + macToString(peerAddress));
-    logger2.log(LOG_INFO, "RECV: " + macToString(peerAddress));
     break;
   }
   case REBOOT:
   {
     logger.log(LOG_CMD,input);
-    logger2.log(LOG_CMD,input);
     // logger.log(LOG_INFO, "OK");
     reboot();
     break;
@@ -176,7 +164,6 @@ void handleCommand(String input)
   case HELP:
   {
     logger.log(LOG_CMD,input);
-    logger2.log(LOG_CMD,input);
     // logger.log(LOG_INFO, "OK");
     listAvailableCommands();
     break;
@@ -184,7 +171,6 @@ void handleCommand(String input)
   case INFO:
   {
     logger.log(LOG_CMD,input);
-    logger2.log(LOG_CMD,input);
     // logger.log(LOG_INFO, "OK");
     printSystemInfo();
     break;
@@ -192,7 +178,6 @@ void handleCommand(String input)
   case SEND:
   {
     logger.log(LOG_CMD,input);
-    logger2.log(LOG_CMD,input);
     String subcmd = input.substring(input.indexOf(commStart) + 1, input.indexOf(endLine));
     if (subcmd.equals("0"))
     {
@@ -211,7 +196,6 @@ void handleCommand(String input)
       if (!parseMacAddress(mac, tempMac))
       {
         logger.log(LOG_ERROR, "Invalid MAC");
-        logger2.log(LOG_ERROR, "Invalid MAC");
       }
       else
       {
@@ -221,7 +205,6 @@ void handleCommand(String input)
         //esp_err_t result = esp_now_send(tempMac, (uint8_t *)msg.c_str(), msg.length());
         sendMsg(MSG, (const uint8_t *)tempMac, &msg,false);
         logger.log(LOG_OUTMSG, "SEND: " + msg);
-        logger2.log(LOG_OUTMSG, "SEND: " + msg);
       }
     }
 
@@ -229,7 +212,6 @@ void handleCommand(String input)
     {
       esp_err_t result = esp_now_send(peerAddress, (uint8_t *)subcmd.c_str(), subcmd.length());
       logger.log(LOG_OUTMSG, "SEND: " + subcmd);
-      logger2.log(LOG_OUTMSG, "SEND: " + subcmd);
       logSendResult(result);
     }
     break;
@@ -237,19 +219,16 @@ void handleCommand(String input)
   case SETBR:
   {
     logger.log(LOG_CMD,input);
-    logger2.log(LOG_CMD,input);
     String baudString = input.substring(input.indexOf(commStart) + 1, input.indexOf(endLine));
     baudString.trim();
     long br = baudString.toInt();
     logger.logf(LOG_INFO, "Baud rate = %ld", br);
-    logger2.logf(LOG_INFO, "Baud rate = %ld", br);
     setBaudRate(br);
     break;
   }
   case SETGPIO:
   {
     logger.log(LOG_CMD,input);
-    logger2.log(LOG_CMD,input);
     String gpioStr = input.substring(input.indexOf("_") + 1, input.indexOf(commStart));
     String stateStr = input.substring(input.indexOf(commStart) + 1, input.indexOf(endLine));
     gpioStr.trim();
@@ -272,7 +251,6 @@ void handleCommand(String input)
         else
         {
           logger.log(LOG_ERROR, "Invalid argument");
-          logger2.log(LOG_ERROR, "Invalid argument");
           break;
         }
       }
@@ -294,25 +272,21 @@ void handleCommand(String input)
   case SETENC:
   {
     logger.log(LOG_CMD,input);
-    logger2.log(LOG_CMD,input);
     String subcmd = input.substring(input.indexOf(commStart) + 1, input.indexOf(endLine));
 
     if (subcmd.equals("0"))
     {
       logger.log(LOG_INFO, "OK");
-      logger2.log(LOG_INFO, "OK");
       setENC(false);
     }
     else if (subcmd.equals("1"))
     {
       logger.log(LOG_INFO, "OK");
-      logger2.log(LOG_INFO, "OK");
       setENC(true);
     }
     else
     {
       logger.log(LOG_ERROR, "Invalid argument");
-      logger2.log(LOG_ERROR, "Invalid argument");
     }
   }
     // default:

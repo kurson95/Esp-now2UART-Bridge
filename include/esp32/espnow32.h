@@ -4,7 +4,6 @@
 #define ESPNOW32_H
 #include <func.h>
 #include <globals.h>
-//extern Logger logger2;
 
 esp_now_peer_info_t peerInfo;
 // Log send results(ESP32 only)
@@ -12,35 +11,27 @@ void logSendResult(esp_err_t result) {
   switch (result) {
   case ESP_OK:
     logger.log(LOG_DEBUG, "ESP_OK: Success");
-    logger2.log(LOG_DEBUG, "ESP_OK: Success");
     break;
   case ESP_ERR_ESPNOW_NOT_INIT:
     logger.log(LOG_DEBUG, "ESP_ERR_ESPNOW_NOT_INIT: ESP-NOW is not initialized");
-    logger2.log(LOG_DEBUG, "ESP_ERR_ESPNOW_NOT_INIT: ESP-NOW is not initialized");
     break;
   case ESP_ERR_ESPNOW_ARG:
     logger.log(LOG_DEBUG, "ESP_ERR_ESPNOW_ARG: Invalid argument");
-    logger2.log(LOG_DEBUG, "ESP_ERR_ESPNOW_ARG: Invalid argument");
     break;
   case ESP_ERR_ESPNOW_INTERNAL:
     logger.log(LOG_DEBUG, "ESP_ERR_ESPNOW_INTERNAL: Internal error");
-    logger2.log(LOG_DEBUG, "ESP_ERR_ESPNOW_INTERNAL: Internal error");
     break;
   case ESP_ERR_ESPNOW_NO_MEM:
     logger.log(LOG_DEBUG, "ESP_ERR_ESPNOW_NO_MEM: Out of memory");
-    logger2.log(LOG_DEBUG, "ESP_ERR_ESPNOW_NO_MEM: Out of memory");
     break;
   case ESP_ERR_ESPNOW_NOT_FOUND:
     logger.log(LOG_DEBUG, "ESP_ERR_ESPNOW_NOT_FOUND: Peer not found");
-    logger2.log(LOG_DEBUG, "ESP_ERR_ESPNOW_NOT_FOUND: Peer not found");
     break;
   case ESP_ERR_ESPNOW_IF:
     logger.log(LOG_DEBUG, "ESP_ERR_ESPNOW_IF: Interface error");
-    logger2.log(LOG_DEBUG, "ESP_ERR_ESPNOW_IF: Interface error");
     break;
   default:
     logger.logf(LOG_DEBUG, "Unknown error: %d\n", result);
-    logger2.logf(LOG_DEBUG, "Unknown error: %d\n", result);
     break;
   }
 }
@@ -158,8 +149,6 @@ switch (type) {
 void OnDataSent(const wifi_tx_info_t *mac_addr, esp_now_send_status_t status) {
   logger.log(LOG_INFO,
              status == ESP_NOW_SEND_SUCCESS ? "SEND OK" : "SEND FAIL");
-  logger2.log(LOG_INFO,
-             status == ESP_NOW_SEND_SUCCESS ? "SEND OK" : "SEND FAIL");
   // Convert MAC address to String for logging
   String macStr = macToString(mac_addr->des_addr);
   logger.logf(LOG_DEBUG,"Destination : %s", macStr.c_str());
@@ -183,7 +172,6 @@ void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData,
   // esp_now_send(mac_addr, (uint8_t *)NACK_MSG, strlen(NACK_MSG));
   sendMsg(NACK, (const uint8_t *)mac_addr, nullptr, false);
   logger.log(LOG_INMSG, "Unknown Peer");
-  logger2.log(LOG_INMSG, "Unknown Peer");
   } else {
     if(incomingMsg.type != ACK && incomingMsg.type != NACK)
       eqPeer_addr ? sendMsg(ACK,(const uint8_t*)mac_addr,nullptr,true) : sendMsg(ACK, (const uint8_t*)mac_addr, nullptr,false);
@@ -192,27 +180,21 @@ void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData,
     case MSG: {
       String txt = String(incomingMsg.msgContent);
     logger.logf(LOG_INMSG, "(%s) %s", mac.c_str(), txt.c_str());
-    logger2.logf(LOG_INMSG, "(%s) %s", mac.c_str(), txt.c_str());
     break;
     }
     case CMD: {
       logger.logf(LOG_DEBUG, "(%s) CMD received: cmd=%d, arg1=%s, arg2=%s",
                 mac.c_str(), incomingMsg.cmd, incomingMsg.arg1, incomingMsg.arg2);
-    logger2.logf(LOG_DEBUG, "(%s) CMD received: cmd=%d, arg1=%s, arg2=%s",
-                 mac.c_str(), incomingMsg.cmd, incomingMsg.arg1, incomingMsg.arg2);
       break;
     }
     case ACK: {
       logger.log(LOG_ACK, mac);
-      logger2.log(LOG_ACK, mac);
     } break;
     case NACK: {
       logger.log(LOG_NACK, mac);
-      logger2.log(LOG_NACK, mac);
     }
     default:
       logger.log(LOG_ERROR, "Unknown message type");
-      logger2.log(LOG_ERROR, "Unknown message type");
       break;
     }
   }
@@ -230,11 +212,9 @@ void espnowInit() {
   macaddr = WiFi.macAddress();
 
   logger.logf(LOG_DEBUG, "MAC: %s", macaddr.c_str());
-  logger2.logf(LOG_DEBUG, "MAC: %s", macaddr.c_str());
 
   if (esp_now_init() != ESP_OK) {
   logger.log(LOG_ERROR, "ESP-NOW init failed");
-  logger2.log(LOG_ERROR, "ESP-NOW init failed");
     return;
   }
 
@@ -248,7 +228,6 @@ void espnowInit() {
 
     if (esp_now_add_peer(&peerInfo) != ESP_OK) {
   logger.log(LOG_ERROR, "PEER ADD ERROR");
-  logger2.log(LOG_ERROR, "PEER ADD ERROR");
       return;
     }
   } else {
@@ -259,7 +238,6 @@ void espnowInit() {
     memcpy(peerInfo.peer_addr, peerAddress, 6);
     if (esp_now_add_peer(&peerInfo) != ESP_OK) {
   logger.log(LOG_ERROR, "PEER ADD ERROR");
-  logger2.log(LOG_ERROR, "PEER ADD ERROR");
       return;
     }
   }

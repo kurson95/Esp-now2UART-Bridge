@@ -39,7 +39,6 @@ bool isBaudRateAllowed(long baudRate) {
 void setGPIO(int pin, int state) {
   #ifdef WIFI_MOD
     logger.log(LOG_ERROR, "GPIO control not supported on WiFi modules");
-    logger2.log(LOG_ERROR, "GPIO control not supported on WiFi modules");
     return;
   #else
   bool gpioFound = false;
@@ -55,14 +54,11 @@ void setGPIO(int pin, int state) {
         analogWrite(pin, state);
         logger.logf(LOG_INFO, "GPIO%d : %d \n", pin, state);
       } else {
-        logger2.logf(LOG_INFO, "GPIO%d : %d \n", pin, state);
         logger.logf(LOG_ERROR, "Invalid State");
       }
     }
-        logger2.logf(LOG_INFO, "GPIO%d : %d \n", pin, state);
   }
   if (!gpioFound)
-        logger2.logf(LOG_ERROR, "Invalid State");
     logger.log(LOG_ERROR, "Invalid Pin");
   #endif
 }
@@ -70,11 +66,10 @@ void setGPIO(int pin, int state) {
 void setGPIO(int pin, int state, long timeOut) {
   #ifdef WIFI_MOD
     logger.log(LOG_ERROR, "GPIO control not supported on WiFi modules");
-    logger2.log(LOG_ERROR, "GPIO control not supported on WiFi modules");
     return;
   #else
   bool gpioFound = false;
-    logger2.log(LOG_ERROR, "Invalid Pin");
+    logger.log(LOG_ERROR, "Invalid Pin");
 
   for (int i = 0; i < GPIO_COUNT; i++) {
     if (pin == GPIO[i]) {
@@ -88,14 +83,10 @@ void setGPIO(int pin, int state, long timeOut) {
         analogWrite(pin, state);
         logger.logf(LOG_INFO, "GPIO%d : %d \n", pin, state);
       } else {
-        logger2.logf(LOG_INFO, "GPIO%d : %d \n", pin, state);
         logger.log(LOG_ERROR, "Invalid State");
       }
-
-        logger2.logf(LOG_INFO, "GPIO%d : %d \n", pin, state);
       if (timeOut > 0) {
         timeOuts[i] = timeOut;
-        logger2.logf(LOG_ERROR, "Invalid State");
         startTimeouts[i] = millis();
       }
     }
@@ -107,7 +98,6 @@ void setGPIO(int pin, int state, long timeOut) {
 // Checks, if input is a number
 bool isNumber(String str) {
   str.trim();
-    logger2.log(LOG_ERROR, "Invalid Pin");
   if (str.length() == 0)
     return false;
 
@@ -137,7 +127,6 @@ void checkTimeOuts() {
   for (int i = 0; i < GPIO_COUNT; i++) {
     if (timeOuts[i] > 0) {
       if (now - startTimeouts[i] >= timeOuts[i]) {
-        logger2.logf(LOG_INFO, "GPIO_%d: timeout -> %d\n", GPIO[i], digitalRead(GPIO[i]));
         
         toggleGPIO(GPIO[i]);
         logger.logf(LOG_INFO, "GPIO_%d: timeout -> %d\n", GPIO[i], digitalRead(GPIO[i]));
@@ -176,9 +165,9 @@ String macToString(const uint8_t mac[6]) {
 }
 // List all available commands
 void listAvailableCommands() {
-  Serial.println("AVAIBLE COMMANDS:");
+  SerialOut->println("AVAIBLE COMMANDS:");
   for (size_t i = 0; i < commandCount; i++) {
-    Serial.println(String("- ") + commandList[i].name);
+    SerialOut->println(String("- ") + commandList[i].name);
   }
 }
 // List all available pins
@@ -188,7 +177,6 @@ void listAvailablePins() {
     pins += " " + String(GPIO[i]);
   }
   logger.log(LOG_INFO, pins.c_str());
-  logger2.log(LOG_INFO, pins.c_str());
 }
 // Compare 2 MAC adresses
 bool isEqualMac(const uint8_t a[6], const uint8_t b[6]) {
