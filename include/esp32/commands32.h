@@ -98,7 +98,6 @@ void printSystemInfo()
   info += "Baud Rate: " + String(baudRate) + endLine;
   info += "Peer MAC: " + macToString(peerAddress) + endLine;
   info += "GPIO count: " + String(GPIO_COUNT) + endLine;
-  info += "Second serial port: TX=" + String(TX_1)+", RX="+ String(RX_1) + endLine;
   info += "========================\n";
 
   logger.log(LOG_NONE, info);
@@ -203,7 +202,8 @@ void handleCommand(String input)
         logger.log(LOG_INFO, addstat ? "OK" : "ERROR");
         String msg = input.substring(input.indexOf(commStart) + 1, input.indexOf(argStart));
         //esp_err_t result = esp_now_send(tempMac, (uint8_t *)msg.c_str(), msg.length());
-        sendMsg(MSG, (const uint8_t *)tempMac, &msg,false);
+        uint16_t msgID = generateMessageId();
+        sendMsg(MSG, (const uint8_t *)tempMac, &msg,false,msgID);
         logger.log(LOG_OUTMSG, "SEND: " + msg);
       }
     }

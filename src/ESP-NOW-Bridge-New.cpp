@@ -12,11 +12,6 @@
 void setup()
 {
   SerialOut->begin(BAUD_RATE);
-#ifdef ESP8266
-  Serial1.begin(BAUD_RATE);
-#elif defined(ESP32)
-  Serial1.begin(BAUD_RATE, SERIAL_8N1, RX_1, TX_1);
-#endif
   SerialOut->flush();
   SerialOut->end();
   pinMode(BTN, INPUT_PULLUP);
@@ -59,13 +54,15 @@ void setup()
   prefs.end();
   // Initialize ESP-NOW protocol.
   espnowInit();
+  xTaskCreate(bridgeLoop, "bridgeLoop", 4096, NULL, 1, NULL);
+  xTaskCreate(checkTimeOuts, "checkTimeOuts", 2048, NULL, 1, NULL);
+  xTaskCreate(TrackMsgTimeouts, "TrackMsgTimeouts", 2048, NULL, 1, NULL);
 }
 
 void loop()
 {
 
-  checkTimeOuts();
-  bridgeLoop();
-  delay(10);
+ // checkTimeOuts();
+ // bridgeLoop();
 
 }

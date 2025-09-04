@@ -122,7 +122,8 @@ void toggleGPIO(int pin) {
   logger.logf(LOG_INFO, "GPIO%d : toggled to %d\n", pin, digitalRead(pin));
 }
 // GPIO timeout tracking
-void checkTimeOuts() {
+void checkTimeOuts(void *arg) {
+  while(1){
   unsigned long now = millis();
   for (int i = 0; i < GPIO_COUNT; i++) {
     if (timeOuts[i] > 0) {
@@ -133,6 +134,8 @@ void checkTimeOuts() {
         timeOuts[i] = 0; // wyłącz timeout
       }
     }
+  }
+  vTaskDelay(10 / portTICK_PERIOD_MS);//check every 10ms
   }
 }
 // Read analog pin state(ESP8266 only)
@@ -190,5 +193,61 @@ bool isEqualMac(const uint8_t a[6], const uint8_t b[6]) {
 void handleCommandFromESPNow(commandType cmd, const String arg1, const String arg2) {
   logger.log(LOG_ERROR, "Command handling from ESP-NOW not implemented yet");
 }
-
+uint16_t generateMessageId() {
+  uint64_t chipId = ESP.getEfuseMac();
+  uint16_t now = millis();
+  uint16_t id = (uint16_t)((chipId >> 16) ^ now);
+  return id;
+}
+void TrackMsgTimeouts(void *arg){
+  while(1){
+  unsigned long now = millis();
+for (int i = 0; i < MAX_PENDING; i++) {
+  if ((pending+i)->id != 0 && !(pending+i)->acked) {
+    if (now - (pending+i)->sentAt > MSG_TIMEOUT) {  // timeout 2s
+      logger.logf(LOG_ERROR,"MsgId %lu LOST", (pending+i)->id);
+      (pending+i)->id = 0; // clear the slot
+    }
+  }
+}
+vTaskDelay(100 / portTICK_PERIOD_MS); // check every 100ms
+  }
+}
+void AddPendingMsg(uint16_t id){
+  for (int i = 0; i < MAX_PENDING; i++) {
+    if ((pending+i)->id == 0) {// find empty slot
+      (pending +i)->id = id;
+      (pending +i)->sentAt = millis();
+      (pending +i)->acked = false;
+      return;
+    }
+  }
+  int oldestIndex = 0;
+  for (int i = 1; i < MAX_PENDING; i++) {
+    if ((pending+i)->sentAt < (pending+oldestIndex)->sentAt) {
+      oldestIndex = i;
+    }
+  }
+  (pending +oldestIndex)->id = id;
+  (pending +oldestIndex)->sentAt = millis();
+  (pending +oldestIndex)->acked = false;
+}
+void MarkMsgAsAcked(uint16_t id){
+  for (int i = 0; i < MAX_PENDING; i++) {
+    if ((pending+i)->id == id) {
+      (pending+i)->acked = true;
+      (pending+i)->id = 0; // clear the slot
+      return;
+    }
+  }
+}
+void MarkMsgAsNacked(uint16_t id){
+  for (int i = 0; i < MAX_PENDING; i++) {
+    if ((pending+i)->id == id) {
+      (pending+i)->acked = false;
+      (pending+i)->id = 0; // clear the slot
+      return;
+    }
+  }
+}
 #endif

@@ -87,11 +87,12 @@ void SendCMD(const uint8_t peer[6], commandType cmd, String arg1,
   logSendResult(result);
 }
 
-void sendMsg(msgType type, const uint8_t peer[6], String *input, bool encrypt) {
+void sendMsg(msgType type, const uint8_t peer[6], String *input, bool encrypt,uint16_t msgID) {
   setEspNowPeer(peer, encrypt) ? logger.log(LOG_DEBUG, "Temp peer set") : logger.log(LOG_ERROR, "Temp peer set error");
   msgStruct message = {};
   message.type = (uint8_t)type;
   message.cmd = (uint8_t)NONE;
+  message.id = msgID;
 switch (type) {
   case ACK:
     strncpy(message.msgContent, ACK_MSG, MSG_MAX - 1);
@@ -110,9 +111,10 @@ switch (type) {
     message.msgContent[0] = '\0';
     break;
   }
+  logger.logf(LOG_DEBUG,"OutMsgID: %lu",message.id);
   setEspNowPeer(peerAddress, encENA) ? logger.log(LOG_DEBUG, "Peer restored") : logger.log(LOG_ERROR, "Peer restore error");
   esp_err_t result = esp_now_send(peer, (uint8_t *)&message, sizeof(message));
-  logger.logf(LOG_DEBUG,"Msg content: %s", String(message.msgContent));
+  logger.logf(LOG_DEBUG,"OutMsg content: %s", String(message.msgContent));
   logSendResult(result);
 }
 
@@ -149,9 +151,6 @@ switch (type) {
 void OnDataSent(const wifi_tx_info_t *mac_addr, esp_now_send_status_t status) {
   logger.log(LOG_INFO,
              status == ESP_NOW_SEND_SUCCESS ? "SEND OK" : "SEND FAIL");
-  // Convert MAC address to String for logging
-  String macStr = macToString(mac_addr->des_addr);
-  logger.logf(LOG_DEBUG,"Destination : %s", macStr.c_str());
 }
 // Callback for receiving data
 void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData,
@@ -159,7 +158,7 @@ void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData,
   msgStruct incomingMsg = {};
   int copyLen = len < (int)sizeof(msgStruct) ? len : (int)sizeof(msgStruct);
   memcpy(&incomingMsg, incomingData, copyLen); 
-  
+  uint16_t IncomingMsgID = incomingMsg.id;
   incomingMsg.arg1[ARG_MAX - 1] = '\0';
   incomingMsg.arg2[ARG_MAX - 1] = '\0';
   incomingMsg.msgContent[MSG_MAX - 1] = '\0';
@@ -167,31 +166,33 @@ void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData,
     bool eqPeer_addr = isEqualMac(peerAddress, mac_addr);
     bool eqDef_addr = isEqualMac(defaultAddress, mac_addr);
   String mac = macToString(mac_addr);
-  logger.logf(LOG_DEBUG, "Received %d bytes from %s", len, mac.c_str());
+  logger.logf(LOG_DEBUG, "Received %d bytes from %s , Id: %lu", len, mac.c_str(),IncomingMsgID);
   if (!eqPeer_addr && !eqDef_addr && encENA) {
   // esp_now_send(mac_addr, (uint8_t *)NACK_MSG, strlen(NACK_MSG));
-  sendMsg(NACK, (const uint8_t *)mac_addr, nullptr, false);
+  sendMsg(NACK, (const uint8_t *)mac_addr, nullptr, false,IncomingMsgID);
   logger.log(LOG_INMSG, "Unknown Peer");
   } else {
     if(incomingMsg.type != ACK && incomingMsg.type != NACK)
-      eqPeer_addr ? sendMsg(ACK,(const uint8_t*)mac_addr,nullptr,true) : sendMsg(ACK, (const uint8_t*)mac_addr, nullptr,false);
+      eqPeer_addr ? sendMsg(ACK,(const uint8_t*)mac_addr,nullptr,true,IncomingMsgID) : sendMsg(ACK, (const uint8_t*)mac_addr, nullptr,false,IncomingMsgID);
 
     switch (incomingMsg.type) {
     case MSG: {
       String txt = String(incomingMsg.msgContent);
-    logger.logf(LOG_INMSG, "(%s) %s", mac.c_str(), txt.c_str());
+    logger.logf(LOG_INMSG, "[%s] %s", mac.c_str(), txt.c_str());
     break;
     }
     case CMD: {
-      logger.logf(LOG_DEBUG, "(%s) CMD received: cmd=%d, arg1=%s, arg2=%s",
+      logger.logf(LOG_DEBUG, "[%s] CMD received: cmd=%d, arg1=%s, arg2=%s",
                 mac.c_str(), incomingMsg.cmd, incomingMsg.arg1, incomingMsg.arg2);
       break;
     }
     case ACK: {
-      logger.log(LOG_ACK, mac);
+      logger.logf(LOG_ACK,"[%s] ID: %lu" ,mac.c_str(), IncomingMsgID);
+      MarkMsgAsAcked(IncomingMsgID);
     } break;
     case NACK: {
-      logger.log(LOG_NACK, mac);
+      logger.logf(LOG_NACK,"[%s] ID: %lu" ,mac.c_str(), IncomingMsgID);
+      MarkMsgAsNacked(IncomingMsgID);
     }
     default:
       logger.log(LOG_ERROR, "Unknown message type");
@@ -202,45 +203,56 @@ void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData,
 
 // Initialize esp-now protocol
 void espnowInit() {
-  WiFi.disconnect(true); // Erase credentials and disconnect
-  WiFi.mode(WIFI_STA);   // Use only STA mode
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_STA);
+  delay(100); 
   uint8_t staMac[6];
-  esp_wifi_get_mac(WIFI_IF_STA, staMac);
+  if (esp_wifi_get_mac(WIFI_IF_STA, staMac) != ESP_OK) {
+    logger.log(LOG_ERROR, "Failed to get STA MAC");
+    return;
+  }
 
-  // 3. Set that same MAC on the AP interface
-  esp_wifi_set_mac(WIFI_IF_AP, staMac);
-  macaddr = WiFi.macAddress();
+  char buf[18];
+  sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
+          staMac[0], staMac[1], staMac[2], staMac[3], staMac[4], staMac[5]);
+  macaddr = String(buf);
 
-  logger.logf(LOG_DEBUG, "MAC: %s", macaddr.c_str());
+  logger.logf(LOG_DEBUG, "STA MAC: %s", macaddr.c_str());
+
+  // uint8_t apMac[6];
+  // memcpy(apMac, staMac, 6);
+  // apMac[5] += 1;  
+  // if (esp_wifi_set_mac(WIFI_IF_AP, apMac) != ESP_OK) {
+  //   logger.log(LOG_ERROR, "Failed to set AP MAC");
+  // }
 
   if (esp_now_init() != ESP_OK) {
-  logger.log(LOG_ERROR, "ESP-NOW init failed");
+    logger.log(LOG_ERROR, "ESP-NOW init failed");
     return;
   }
 
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);
 
-  if (!encENA) {
-    memcpy(peerInfo.peer_addr, peerAddress, 6);
-    peerInfo.channel = 0;
-    peerInfo.encrypt = false;
+  // Konfiguracja peerów
+  memcpy(peerInfo.peer_addr, peerAddress, 6);
+  peerInfo.channel = 0;
 
-    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-  logger.log(LOG_ERROR, "PEER ADD ERROR");
-      return;
-    }
+  if (!encENA) {
+    peerInfo.encrypt = false;
   } else {
     esp_now_set_pmk((uint8_t *)PRIMARY_MASTER_KEY);
-    peerInfo.channel = 0;
     peerInfo.encrypt = true;
     memcpy(peerInfo.lmk, LOCAL_MASTER_KEY, 16);
-    memcpy(peerInfo.peer_addr, peerAddress, 6);
-    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-  logger.log(LOG_ERROR, "PEER ADD ERROR");
-      return;
-    }
   }
+
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    logger.log(LOG_ERROR, "PEER ADD ERROR");
+    return;
+  }
+
+  logger.log(LOG_INFO, "ESP-NOW ready");
 }
+
 
 #endif

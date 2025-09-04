@@ -22,9 +22,13 @@ extern "C"
 #include "log.h"
 #define ARG_MAX 32
 #define MSG_MAX 128
+#define MAX_PENDING 10
+#define MSG_TIMEOUT 2E3 // milliseconds
 unsigned long baudRate;
 bool autoSend = true;
 HardwareSerial* SerialOut = &Serial; 
+//HardwareSerial* SerialOut = &Serial1; 
+//HardwareSerial* SerialOut = &Serial2; 
 
 Logger logger(*SerialOut);
 
@@ -59,7 +63,6 @@ const char *ACK_MSG = "ACK";
 const char *NACK_MSG = "NACK";
 
 #if defined(ESP8266)
-#define TX_1 2
 
 #if defined(ARDUINO_ESP8266_ESP01)
 const String ESPModel = "ESP01";
@@ -78,34 +81,29 @@ const unsigned int GPIO[] = {4, 5, 12, 13, 14, 15};
 const String ESPModel = "ESP32";
 const unsigned int GPIO[] = {
     0, 1, 2, 3, 4, 5,
-    12, 13, 14, 15,
+    12, 13, 14, 15,16,17,
     18, 19,
     21, 22, 23,
     25, 26, 27,
     32, 33, 34, 35, 36, 37, 38, 39};
-#define RX_1 16
-#define TX_1 17
+
 #elif defined(BOARD_C6MINI)
 const String ESPModel = "ESP32-C6-Mod";
-const unsigned int GPIO[] = {0, 1, 2, 18, 19, 20, 21, 22, 23};
-#define RX_1 -1
-#define TX_1 -1
+const unsigned int GPIO[] = {0};
+#define WIFI_MOD
 #elif defined(BOARD_ESP01C3)
 const String ESPModel = "ESP01-C3";
 const unsigned int GPIO[] = {0};
 #define WIFI_MOD
-#define RX_1 -1
-#define TX_1 -1
+
 #elif defined(CONFIG_IDF_TARGET_ESP32C3)
 const String ESPModel = "ESP32-C3";
-const unsigned int GPIO[] = {0, 1, 4, 5, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21};
-#define RX_1 2
-#define TX_1 3
+const unsigned int GPIO[] = {0, 1,2,3 4, 5, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21};
+
 #elif defined(CONFIG_IDF_TARGET_ESP32C6)
 const String ESPModel = "ESP32-C6";
 const unsigned int GPIO[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 23, 24, 25, 26, 27};
-#define RX_1 18
-#define TX_1 19
+
 #else
 #error "Unsupported ESP32 variant."
 #endif
@@ -155,6 +153,7 @@ const commandEntry commandList[] = {
 const size_t commandCount = sizeof(commandList) / sizeof(commandEntry);
 
 typedef struct __attribute__((packed)) {
+  uint16_t id;
   uint8_t  type;
   uint8_t  cmd;
   char     arg1[ARG_MAX];
@@ -162,5 +161,12 @@ typedef struct __attribute__((packed)) {
   char     msgContent[MSG_MAX];
 } msgStruct;
 
+typedef struct {
+  uint16_t id;
+  unsigned long sentAt;
+  bool acked;
+} PendingMsg;
+
+PendingMsg pending[MAX_PENDING];   
 
 #endif

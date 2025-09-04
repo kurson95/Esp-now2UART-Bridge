@@ -11,8 +11,8 @@
 #include <esp32/commands32.h>
 #endif
 // Main loop function
-void bridgeLoop()
-{
+void bridgeLoop(void *arg)
+{  while(1){
     while (SerialOut->available())
     {
         static String buffer = "";
@@ -40,8 +40,10 @@ void bridgeLoop()
 
                     if (autoSend)//check if autosend is enabled
                                         {
+                                            uint16_t Id =  generateMessageId();
+                                            AddPendingMsg(Id);
                     #ifdef ESP32
-                                            sendMsg(MSG, (const uint8_t*)peerAddress, &buffer,encENA);//send message
+                                            sendMsg(MSG, (const uint8_t*)peerAddress, &buffer,encENA,Id);//send message
                     #elif defined(ESP8266)
                                             sendMsg(MSG, peerAddress, &buffer);//send message
                     #endif
@@ -61,5 +63,7 @@ void bridgeLoop()
             buffer += c;
         }
     }
+    vTaskDelay(5 / portTICK_PERIOD_MS);//small delay to allow other tasks to run
+}
 }
 #endif

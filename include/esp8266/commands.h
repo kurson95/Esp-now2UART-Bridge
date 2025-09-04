@@ -94,7 +94,6 @@ void printSystemInfo()
   info += "Baud Rate: " + String(baudRate) + endLine;
   info += "Peer MAC: " + macToString(peerAddress) + endLine;
   info += "GPIO count: " + String(GPIO_COUNT) + endLine;
-  info += "Second serial port: TX=" + String(TX_1)+ endLine;
   info += "========================\n";
 
   logger.log(LOG_NONE, info);
