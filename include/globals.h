@@ -20,7 +20,7 @@ extern "C"
 #endif
 #include <Preferences.h>
 #include "log.h"
-#define ARG_MAX 32
+#define ARG_MAX 32 
 #define MSG_MAX 128
 #define MAX_PENDING 10
 #define MSG_TIMEOUT 2E3 // milliseconds
@@ -32,7 +32,7 @@ HardwareSerial* SerialOut = &Serial;
 
 Logger logger(*SerialOut);
 
-static const char endLine[2] = "\n";
+static const char endLine[3] = "\r\n";
 static const char argStart[2] = ",";
 static const char commStart[2] = "=";
 
@@ -98,7 +98,7 @@ const unsigned int GPIO[] = {0};
 
 #elif defined(CONFIG_IDF_TARGET_ESP32C3)
 const String ESPModel = "ESP32-C3";
-const unsigned int GPIO[] = {0, 1,2,3 4, 5, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21};
+const unsigned int GPIO[] = {0, 1,2,3 ,4, 5, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21};
 
 #elif defined(CONFIG_IDF_TARGET_ESP32C6)
 const String ESPModel = "ESP32-C6";

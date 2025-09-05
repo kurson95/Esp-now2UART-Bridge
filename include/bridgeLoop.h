@@ -47,7 +47,6 @@ void bridgeLoop(void *arg)
                     #elif defined(ESP8266)
                                             sendMsg(MSG, peerAddress, &buffer);//send message
                     #endif
-                                            logger.log(LOG_OUTMSG, buffer);
                     
                                         }
                     else
@@ -63,7 +62,7 @@ void bridgeLoop(void *arg)
             buffer += c;
         }
     }
-    vTaskDelay(5 / portTICK_PERIOD_MS);//small delay to allow other tasks to run
+    vTaskDelay(10 / portTICK_PERIOD_MS);//small delay to allow other tasks to run
 }
 }
 #endif

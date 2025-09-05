@@ -61,8 +61,4 @@ void setup()
 
 void loop()
 {
-
- // checkTimeOuts();
- // bridgeLoop();
-
 }

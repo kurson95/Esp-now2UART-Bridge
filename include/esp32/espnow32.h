@@ -7,34 +7,7 @@
 
 esp_now_peer_info_t peerInfo;
 // Log send results(ESP32 only)
-void logSendResult(esp_err_t result) {
-  switch (result) {
-  case ESP_OK:
-    logger.log(LOG_DEBUG, "ESP_OK: Success");
-    break;
-  case ESP_ERR_ESPNOW_NOT_INIT:
-    logger.log(LOG_DEBUG, "ESP_ERR_ESPNOW_NOT_INIT: ESP-NOW is not initialized");
-    break;
-  case ESP_ERR_ESPNOW_ARG:
-    logger.log(LOG_DEBUG, "ESP_ERR_ESPNOW_ARG: Invalid argument");
-    break;
-  case ESP_ERR_ESPNOW_INTERNAL:
-    logger.log(LOG_DEBUG, "ESP_ERR_ESPNOW_INTERNAL: Internal error");
-    break;
-  case ESP_ERR_ESPNOW_NO_MEM:
-    logger.log(LOG_DEBUG, "ESP_ERR_ESPNOW_NO_MEM: Out of memory");
-    break;
-  case ESP_ERR_ESPNOW_NOT_FOUND:
-    logger.log(LOG_DEBUG, "ESP_ERR_ESPNOW_NOT_FOUND: Peer not found");
-    break;
-  case ESP_ERR_ESPNOW_IF:
-    logger.log(LOG_DEBUG, "ESP_ERR_ESPNOW_IF: Interface error");
-    break;
-  default:
-    logger.logf(LOG_DEBUG, "Unknown error: %d\n", result);
-    break;
-  }
-}
+
 
 // Function for changing peer MAC address(ESP32 only)
 bool setEspNowPeer(const uint8_t *peer_addr, bool encrypt) {
@@ -84,11 +57,37 @@ void SendCMD(const uint8_t peer[6], commandType cmd, String arg1,
   }
 
   esp_err_t result = esp_now_send(peer, (uint8_t *)&message, sizeof(message));
-  logSendResult(result);
+  switch (result) {
+  case ESP_OK:
+    logger.log(LOG_ERROR, "ESP_OK: Success");
+    break;
+  case ESP_ERR_ESPNOW_NOT_INIT:
+    logger.log(LOG_ERROR, "ESP_ERR_ESPNOW_NOT_INIT: ESP-NOW is not initialized");
+    break;
+  case ESP_ERR_ESPNOW_ARG:
+    logger.log(LOG_ERROR, "ESP_ERR_ESPNOW_ARG: Invalid argument");
+    break;
+  case ESP_ERR_ESPNOW_INTERNAL:
+    logger.log(LOG_ERROR, "ESP_ERR_ESPNOW_INTERNAL: Internal error");
+    break;
+  case ESP_ERR_ESPNOW_NO_MEM:
+    logger.log(LOG_ERROR, "ESP_ERR_ESPNOW_NO_MEM: Out of memory");
+
+    break;
+  case ESP_ERR_ESPNOW_NOT_FOUND:
+    logger.log(LOG_ERROR, "ESP_ERR_ESPNOW_NOT_FOUND: Peer not found");
+    break;
+  case ESP_ERR_ESPNOW_IF:
+    logger.log(LOG_ERROR, "ESP_ERR_ESPNOW_IF: Interface error");
+    break;
+  default:
+    logger.logf(LOG_ERROR, "Unknown error: %d\n", result);
+    break;
+  }
 }
 
 void sendMsg(msgType type, const uint8_t peer[6], String *input, bool encrypt,uint16_t msgID) {
-  setEspNowPeer(peer, encrypt) ? logger.log(LOG_DEBUG, "Temp peer set") : logger.log(LOG_ERROR, "Temp peer set error");
+  setEspNowPeer(peer, encrypt) ? logger.log(LOG_DEBUG, "Temp peer set") : logger.log(LOG_DEBUG, "Temp peer set error");
   msgStruct message = {};
   message.type = (uint8_t)type;
   message.cmd = (uint8_t)NONE;
@@ -111,42 +110,42 @@ switch (type) {
     message.msgContent[0] = '\0';
     break;
   }
-  logger.logf(LOG_DEBUG,"OutMsgID: %lu",message.id);
-  setEspNowPeer(peerAddress, encENA) ? logger.log(LOG_DEBUG, "Peer restored") : logger.log(LOG_ERROR, "Peer restore error");
-  esp_err_t result = esp_now_send(peer, (uint8_t *)&message, sizeof(message));
-  logger.logf(LOG_DEBUG,"OutMsg content: %s", String(message.msgContent));
-  logSendResult(result);
-}
-
-
-void sendMsg(msgType type, String *input) {
-  msgStruct message = {};
-
-  message.type = (uint8_t)type;
-  message.cmd = (uint8_t)NONE;
-switch (type) {
-  case ACK:
-    strncpy(message.msgContent, ACK_MSG, MSG_MAX - 1);
+  logger.logf(LOG_OUTMSG,"ID:%lu MSG: %s",message.id ,String(message.msgContent));
+  setEspNowPeer(peerAddress, encENA) ? logger.log(LOG_DEBUG, "Peer restored") : logger.log(LOG_DEBUG, "Peer restore error");
+  esp_err_t result;
+  result = esp_now_send(peer, (uint8_t *)&message, sizeof(message));
+  switch (result) {
+  case ESP_OK:
+    logger.log(LOG_INFO, "ESP_OK: Success");
     break;
-  case NACK:
-    strncpy(message.msgContent, NACK_MSG, MSG_MAX - 1);
+  case ESP_ERR_ESPNOW_NOT_INIT:
+    logger.log(LOG_ERROR, "ESP_ERR_ESPNOW_NOT_INIT: ESP-NOW is not initialized");
     break;
-  case MSG:
-    if (input && !input->isEmpty()) {
-      input->toCharArray(message.msgContent, MSG_MAX);
-    } else {
-      message.msgContent[0] = '\0';
-    }
+  case ESP_ERR_ESPNOW_ARG:
+    logger.log(LOG_ERROR, "ESP_ERR_ESPNOW_ARG: Invalid argument");
+    break;
+  case ESP_ERR_ESPNOW_INTERNAL:
+    logger.log(LOG_ERROR, "ESP_ERR_ESPNOW_INTERNAL: Internal error");
+    break;
+  case ESP_ERR_ESPNOW_NO_MEM:
+    logger.log(LOG_ERROR, "ESP_ERR_ESPNOW_NO_MEM: Out of memory, retrying...");
+    delay(10);
+    result = esp_now_send(peer, (uint8_t *)&message, sizeof(message));
+    break;
+  case ESP_ERR_ESPNOW_NOT_FOUND:
+    logger.log(LOG_ERROR, "ESP_ERR_ESPNOW_NOT_FOUND: Peer not found");
+    break;
+  case ESP_ERR_ESPNOW_IF:
+    logger.log(LOG_ERROR, "ESP_ERR_ESPNOW_IF: Interface error");
     break;
   default:
-    message.msgContent[0] = '\0';
+    logger.logf(LOG_ERROR, "Unknown error: %d\n", result);
     break;
   }
-
-  esp_err_t result = esp_now_send(peerAddress, (uint8_t *)&message, sizeof(message));
-  logger.log(LOG_DEBUG, message.msgContent);
-  logSendResult(result);
 }
+
+
+
 // Callback for sending data
 void OnDataSent(const wifi_tx_info_t *mac_addr, esp_now_send_status_t status) {
   logger.log(LOG_INFO,
@@ -182,7 +181,7 @@ void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData,
     break;
     }
     case CMD: {
-      logger.logf(LOG_DEBUG, "[%s] CMD received: cmd=%d, arg1=%s, arg2=%s",
+      logger.logf(LOG_CMD, "[%s] CMD received: cmd=%d, arg1=%s, arg2=%s",
                 mac.c_str(), incomingMsg.cmd, incomingMsg.arg1, incomingMsg.arg2);
       break;
     }
@@ -217,7 +216,7 @@ void espnowInit() {
           staMac[0], staMac[1], staMac[2], staMac[3], staMac[4], staMac[5]);
   macaddr = String(buf);
 
-  logger.logf(LOG_DEBUG, "STA MAC: %s", macaddr.c_str());
+  logger.logf(LOG_INFO, "STA MAC: %s", macaddr.c_str());
 
   // uint8_t apMac[6];
   // memcpy(apMac, staMac, 6);

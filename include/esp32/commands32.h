@@ -178,7 +178,7 @@ void handleCommand(String input)
   {
     logger.log(LOG_CMD,input);
     String subcmd = input.substring(input.indexOf(commStart) + 1, input.indexOf(endLine));
-    if (subcmd.equals("0"))
+    if (subcmd.equals("0")) //Checks, if 1'st argument is 0 or 1
     {
       setAutoSend(0);
       // logger.log(LOG_INFO, "OK");
@@ -188,8 +188,9 @@ void handleCommand(String input)
       setAutoSend(1);
       // logger.log(LOG_INFO, "OK");
     }
-    else if (input.indexOf(argStart) != -1)
+    else if (input.indexOf(argStart) != -1)//Checks , if user added second argument to command
     {
+      //If so , try parse it to mac address
       uint8_t tempMac[6];
       String mac = input.substring(input.indexOf(argStart) + 1, input.indexOf(endLine));
       if (!parseMacAddress(mac, tempMac))
@@ -198,6 +199,7 @@ void handleCommand(String input)
       }
       else
       {
+        //If valid, send msg to this MAC
         bool addstat = setEspNowPeer(tempMac,0);
         logger.log(LOG_INFO, addstat ? "OK" : "ERROR");
         String msg = input.substring(input.indexOf(commStart) + 1, input.indexOf(argStart));
@@ -207,12 +209,13 @@ void handleCommand(String input)
         logger.log(LOG_OUTMSG, "SEND: " + msg);
       }
     }
-
     else
     {
-      esp_err_t result = esp_now_send(peerAddress, (uint8_t *)subcmd.c_str(), subcmd.length());
+      //If user not provided any additional  arguments , send msg to saved peer
+      uint16_t msgID = generateMessageId();
+      String msg = input.substring(input.indexOf(commStart) + 1, input.indexOf(endLine));
+      sendMsg(MSG,(const uint8_t*)peerAddress,&msg,encENA,msgID);
       logger.log(LOG_OUTMSG, "SEND: " + subcmd);
-      logSendResult(result);
     }
     break;
   }
