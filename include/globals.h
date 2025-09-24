@@ -56,7 +56,9 @@ enum msgType : uint8_t
   ACK,
   MSG,
   CMD,
-  PAIR
+  PAIR,
+  PAIR_ACK,
+  PAIR_NACK
 }__attribute__((packed));
 
 const char *ACK_MSG = "ACK";
@@ -76,7 +78,7 @@ const unsigned int GPIO[] = {4, 5, 12, 13, 14, 15};
 
 
 #elif defined(ESP32)
-
+const char chipID = (char)(ESP.getEfuseMac() >> 32);
 #if defined(CONFIG_IDF_TARGET_ESP32)
 const String ESPModel = "ESP32";
 const unsigned int GPIO[] = {
@@ -126,7 +128,6 @@ enum commandType : uint8_t
   SEND,
   SETBR,
   SETGPIO,
-  READAN,
   SETENC
 };
 
@@ -147,13 +148,15 @@ const commandEntry commandList[] = {
     {"SEND", SEND},
     {"SETBR", SETBR},
     {"SETGPIO", SETGPIO},
-    {"READAN", READAN},
     {"SETENC", SETENC}};
 
 const size_t commandCount = sizeof(commandList) / sizeof(commandEntry);
 
 typedef struct __attribute__((packed)) {
   uint16_t id;
+  bool isBroadcast;
+  bool isEncrypted;
+  char chipID;
   uint8_t  type;
   uint8_t  cmd;
   char     arg1[ARG_MAX];

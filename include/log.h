@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <stdarg.h>
 
-#define ENABLE_DEBUG true
+#define ENABLE_DEBUG false
 
 enum LogType
 {

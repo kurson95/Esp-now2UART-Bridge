@@ -86,6 +86,7 @@ void printSystemInfo()
   info += "Chip model: " + String(ESP.getChipModel()) + endLine;
   info += "Chip revision: " + String(ESP.getChipRevision()) + endLine;
   info += "Chip cores: " + String(ESP.getChipCores()) + endLine;
+  info += "Serial number: " + String((uint32_t)(ESP.getEfuseMac() >> 32), HEX) + String((uint32_t)ESP.getEfuseMac(), HEX) + endLine;
   info += "Flash size: " + String(ESP.getFlashChipSize()) + " bytes\n";
   info += "Free heap: " + String(ESP.getFreeHeap()) + " bytes\n";
   info += "Min heap (since boot): " + String(esp_get_minimum_free_heap_size()) + " bytes\n";
@@ -99,7 +100,6 @@ void printSystemInfo()
   info += "Peer MAC: " + macToString(peerAddress) + endLine;
   info += "GPIO count: " + String(GPIO_COUNT) + endLine;
   info += "========================\n";
-
   logger.log(LOG_NONE, info);
 }
 
@@ -267,11 +267,7 @@ void handleCommand(String input)
       listAvailablePins();
     break;
   }
-  case READAN:
-  {
-    logger.log(LOG_ERROR, "Analog read not supported on ESP32 modules yet");
-    break;
-  }
+
   case SETENC:
   {
     logger.log(LOG_CMD,input);
