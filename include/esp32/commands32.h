@@ -1,4 +1,3 @@
-#include <cstdlib>
 #ifndef COMMANDS32_H
 #define COMMANDS32_H
 #include <globals.h>
@@ -98,7 +97,6 @@ void printSystemInfo()
   info += "TypeToSend: " + String(autoSend ? "Enabled" : "Disabled") + endLine;
   info += "Baud Rate: " + String(baudRate) + endLine;
   info += "Peer MAC: " + macToString(peerAddress) + endLine;
-  info += "GPIO count: " + String(GPIO_COUNT) + endLine;
   info += "========================\n";
   logger.log(LOG_NONE, info);
 }
@@ -229,44 +227,44 @@ void handleCommand(String input)
     setBaudRate(br);
     break;
   }
-  case SETGPIO:
-  {
-    logger.log(LOG_CMD,input);
-    String gpioStr = input.substring(input.indexOf("_") + 1, input.indexOf(commStart));
-    String stateStr = input.substring(input.indexOf(commStart) + 1, input.indexOf(endLine));
-    gpioStr.trim();
-    stateStr.trim();
-    if (input.indexOf("_") != -1 && isNumber(gpioStr))
-    {
+  // case SETGPIO:
+  // {
+  //   logger.log(LOG_CMD,input);
+  //   String gpioStr = input.substring(input.indexOf("_") + 1, input.indexOf(commStart));
+  //   String stateStr = input.substring(input.indexOf(commStart) + 1, input.indexOf(endLine));
+  //   gpioStr.trim();
+  //   stateStr.trim();
+  //   if (input.indexOf("_") != -1 && isNumber(gpioStr))
+  //   {
 
-      int gpio = gpioStr.toInt();
-      int state = stateStr.toInt();
+  //     int gpio = gpioStr.toInt();
+  //     int state = stateStr.toInt();
 
-      if (input.indexOf(argStart) != -1)
-      {
-        String timeOutStr = input.substring(input.indexOf(argStart) + 1, input.indexOf(endLine));
-        if (isNumber(timeOutStr))
-        {
-          long timeout = timeOutStr.toInt();
-          setGPIO(gpio, state, timeout);
-          break;
-        }
-        else
-        {
-          logger.log(LOG_ERROR, "Invalid argument");
-          break;
-        }
-      }
-      else
-      {
-        setGPIO(gpio, state);
-        break;
-      }
-    }
-    else
-      listAvailablePins();
-    break;
-  }
+  //     if (input.indexOf(argStart) != -1)
+  //     {
+  //       String timeOutStr = input.substring(input.indexOf(argStart) + 1, input.indexOf(endLine));
+  //       if (isNumber(timeOutStr))
+  //       {
+  //         long timeout = timeOutStr.toInt();
+  //         setGPIO(gpio, state, timeout);
+  //         break;
+  //       }
+  //       else
+  //       {
+  //         logger.log(LOG_ERROR, "Invalid argument");
+  //         break;
+  //       }
+  //     }
+  //     else
+  //     {
+  //       setGPIO(gpio, state);
+  //       break;
+  //     }
+  //   }
+  //   else
+  //     listAvailablePins();
+  //   break;
+  // }
 
   case SETENC:
   {

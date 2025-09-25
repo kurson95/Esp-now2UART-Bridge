@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <globals.h>   //gloval variables
+#include <globals.h>    //gloval variables
 #include <func.h>       //global functions
 #include <bridgeLoop.h> //main loop function
 #if defined(ESP8266)
@@ -15,6 +15,7 @@ void setup()
   SerialOut->flush();
   SerialOut->end();
   pinMode(BTN, INPUT_PULLUP);
+  pinMode(LED, OUTPUT);
   prefs.begin("serial", false);
   // Check , if value storing autosend state is in flash
   if (!prefs.isKey("autoSend")) //
@@ -54,9 +55,10 @@ void setup()
   prefs.end();
   // Initialize ESP-NOW protocol.
   espnowInit();
-  xTaskCreate(bridgeLoop, "bridgeLoop", 4096, NULL, 1, NULL);//main loop
-  xTaskCreate(checkTimeOuts, "checkTimeOuts", 2048, NULL, 1, NULL);//check for timeouts
-  xTaskCreate(TrackMsgTimeouts, "TrackMsgTimeouts", 2048, NULL, 1, NULL);//check for message timeouts
+  xTaskCreate(bridgeLoop, "bridgeLoop", 4096, NULL, 1, NULL);             // main loop
+  xTaskCreate(TrackMsgTimeouts, "TrackMsgTimeouts", 2048, NULL, 1, NULL); // check for message timeouts
+  blinkQueue = xQueueCreate(5, sizeof(int));
+  xTaskCreatePinnedToCore(blinkTask, "BlinkTask", 2048, NULL, 1, NULL, 1);
 }
 
 void loop()

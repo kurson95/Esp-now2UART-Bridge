@@ -7,6 +7,7 @@
 #include <cstdint>
 #define BAUD_RATE 9600
 #define BTN 0
+#define LED 2
 #if defined(ESP8266)
 #include <ESP8266WiFi.h>
 extern "C"
@@ -20,21 +21,22 @@ extern "C"
 #endif
 #include <Preferences.h>
 #include "log.h"
-#define ARG_MAX 32 
+#define ARG_MAX 32
 #define MSG_MAX 128
 #define MAX_PENDING 10
 #define MSG_TIMEOUT 2E3 // milliseconds
 unsigned long baudRate;
 bool autoSend = true;
-HardwareSerial* SerialOut = &Serial; 
-//HardwareSerial* SerialOut = &Serial1; 
-//HardwareSerial* SerialOut = &Serial2; 
+HardwareSerial *SerialOut = &Serial;
+// HardwareSerial* SerialOut = &Serial1;
+// HardwareSerial* SerialOut = &Serial2;
 
 Logger logger(*SerialOut);
-Serial.
 static const char endLine[3] = "\r\n";
 static const char argStart[2] = ",";
 static const char commStart[2] = "=";
+
+QueueHandle_t blinkQueue;
 
 const long allowedBaudRates[] = {300, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 230400, 250000};
 
@@ -59,39 +61,19 @@ enum msgType : uint8_t
   PAIR,
   PAIR_ACK,
   PAIR_NACK
-}__attribute__((packed));
+} __attribute__((packed));
 
 const char *ACK_MSG = "ACK";
 const char *NACK_MSG = "NACK";
 
 #if defined(ESP8266)
 
-#if defined(ARDUINO_ESP8266_ESP01)
-const String ESPModel = "ESP01";
-const unsigned int GPIO[] = {0};
-#define WIFI_MOD
-#elif defined(BOARD_NODEMCU) || defined(ARDUINO_ESP8266_WEMOS_D1MINI) || defined(BOARD_ESP07) || defined(BOARD_ESP12E)
-const String ESPModel = "ESP12E/F";
-const unsigned int GPIO[] = {4, 5, 12, 13, 14, 15};
-#endif
 #elif defined(ESP32)
 const char chipID = (char)(ESP.getEfuseMac() >> 32);
-#if defined(CONFIG_IDF_TARGET_ESP32)
-#include "esp32/pinouts/pins_esp32.h"
-#elif defined(BOARD_C6MINI)
-#include "esp32/pinouts/pins_esp32c6Mod.h"
-#elif defined(BOARD_ESP01C3)
-#include "esp32/pinouts/pins_esp01c3.h"
-#elif defined(CONFIG_IDF_TARGET_ESP32C3)
-#include "esp32/pinouts/pins_esp32c3.h"
-#elif defined(CONFIG_IDF_TARGET_ESP32C6)
-#include "esp32/pinouts/pins_esp32c6Mod.h"
-#else
-#error "Unsupported ESP32 variant."
-#endif
+
 #endif
 
-enum commandType : uint8_t 
+enum commandType : uint8_t
 {
   NONE,
   ADDRECV,
@@ -103,7 +85,6 @@ enum commandType : uint8_t
   INFO,
   SEND,
   SETBR,
-  SETGPIO,
   SETENC
 };
 
@@ -123,29 +104,30 @@ const commandEntry commandList[] = {
     {"INFO", INFO},
     {"SEND", SEND},
     {"SETBR", SETBR},
-    {"SETGPIO", SETGPIO},
     {"SETENC", SETENC}};
 
 const size_t commandCount = sizeof(commandList) / sizeof(commandEntry);
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
   uint16_t id;
   bool isBroadcast;
   bool isEncrypted;
   char chipID;
-  uint8_t  type;
-  uint8_t  cmd;
-  char     arg1[ARG_MAX];
-  char     arg2[ARG_MAX];
-  char     msgContent[MSG_MAX];
+  uint8_t type;
+  uint8_t cmd;
+  char arg1[ARG_MAX];
+  char arg2[ARG_MAX];
+  char msgContent[MSG_MAX];
 } msgStruct;
 
-typedef struct {
+typedef struct
+{
   uint16_t id;
   unsigned long sentAt;
   bool acked;
 } PendingMsg;
 
-PendingMsg pending[MAX_PENDING];   
+PendingMsg pending[MAX_PENDING];
 
 #endif
