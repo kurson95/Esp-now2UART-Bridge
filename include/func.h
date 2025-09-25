@@ -208,5 +208,53 @@ void startBlink(int times)
 {
   xQueueSend(blinkQueue, &times, 0);
 }
-
+void longPressAction()
+{
+  logger.log(LOG_INFO, "Long press detected, resetting to factory defaults");
+  prefs.begin("mac", false);
+  prefs.clear();
+  prefs.end();
+  prefs.begin("encStat", false);
+  prefs.clear();
+  prefs.end();
+  prefs.begin("serial", false);
+  prefs.clear();
+  prefs.end();
+  logger.log(LOG_INFO, "REBOOTING...");
+  SerialOut->flush();
+  SerialOut->end();
+  delay(1E3);
+  ESP.restart();
+}
+void buttonTask(void *params)
+{
+  uint32_t pressStart = 0;
+  bool wasPressed = false;
+  for (;;)
+  {
+    int state = digitalRead(BTN);
+    if (state == LOW && !wasPressed)
+    {
+      wasPressed = true;
+      pressStart = millis();
+    }
+    else if (state == LOW && wasPressed)
+    {
+      if (millis() - pressStart >= holdTime)
+      {
+        longPressAction();
+        while (digitalRead(BTN) == LOW)
+        {
+          vTaskDelay(pdMS_TO_TICKS(50));
+        }
+        wasPressed = false;
+      }
+    }
+    else if (state == HIGH && wasPressed)
+    {
+      wasPressed = false;
+    }
+    vTaskDelay(pdMS_TO_TICKS(50));
+  }
+}
 #endif

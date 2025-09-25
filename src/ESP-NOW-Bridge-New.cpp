@@ -58,7 +58,8 @@ void setup()
   xTaskCreate(bridgeLoop, "bridgeLoop", 4096, NULL, 1, NULL);             // main loop
   xTaskCreate(TrackMsgTimeouts, "TrackMsgTimeouts", 2048, NULL, 1, NULL); // check for message timeouts
   blinkQueue = xQueueCreate(5, sizeof(int));
-  xTaskCreatePinnedToCore(blinkTask, "BlinkTask", 2048, NULL, 1, NULL, 1);
+  xTaskCreate(blinkTask, "BlinkTask", 2048, NULL, 1, NULL);
+  xTaskCreate(buttonTask, "buttonTask", 2048, NULL, 1, &buttonTaskHandle);
 }
 
 void loop()

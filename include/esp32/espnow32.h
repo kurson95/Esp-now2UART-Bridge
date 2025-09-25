@@ -123,7 +123,7 @@ void sendMsg(msgType type, const uint8_t peer[6], String *input, bool encrypt, u
     {
       message.msgContent[0] = '\0';
     }
-    logger.logf(LOG_OUTMSG, "ID:%lu MSG: %s", message.id, input);
+    logger.logf(LOG_OUTMSG, "ID:%lu", message.id);
     break;
   default:
     message.msgContent[0] = '\0';
