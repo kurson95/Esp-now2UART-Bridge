@@ -31,7 +31,7 @@ HardwareSerial* SerialOut = &Serial;
 //HardwareSerial* SerialOut = &Serial2; 
 
 Logger logger(*SerialOut);
-
+Serial.
 static const char endLine[3] = "\r\n";
 static const char argStart[2] = ",";
 static const char commStart[2] = "=";
@@ -91,7 +91,7 @@ const char chipID = (char)(ESP.getEfuseMac() >> 32);
 #endif
 #endif
 
-enum commandType : uint8_t
+enum commandType : uint8_t 
 {
   NONE,
   ADDRECV,
