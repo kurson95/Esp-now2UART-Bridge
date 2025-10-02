@@ -55,11 +55,13 @@ void setup()
   prefs.end();
   // Initialize ESP-NOW protocol.
   espnowInit();
-  xTaskCreate(bridgeLoop, "bridgeLoop", 4096, NULL, 1, NULL);             // main loop
+  SerialOut->onReceive(onSerial, true); // Enable interrupt on serial data reception
   xTaskCreate(TrackMsgTimeouts, "TrackMsgTimeouts", 2048, NULL, 1, NULL); // check for message timeouts
   blinkQueue = xQueueCreate(5, sizeof(int));
+  lineQueue = xQueueCreate(5, sizeof(char[128]));
   xTaskCreate(blinkTask, "BlinkTask", 2048, NULL, 1, NULL);
   xTaskCreate(buttonTask, "buttonTask", 2048, NULL, 1, &buttonTaskHandle);
+  xTaskCreate(bridgeLoop, "bridgeLoop", 8192, NULL, 1, NULL);
 }
 
 void loop()

@@ -10,45 +10,63 @@
 #include <esp32/espnow32.h>
 #include <esp32/commands32.h>
 #endif
-// Main loop function
-void bridgeLoop(void *arg)
-{  while(1){
+static char inputBuf[128];
+static size_t idx = 0;
+
+void IRAM_ATTR onSerial()
+{
     while (SerialOut->available())
     {
-        static String buffer = "";
         char c = SerialOut->read();
-        if (c == '\n')//end of line reached
+        if (idx < sizeof(inputBuf) - 1)
         {
-            buffer.trim();//remove whitespace
+            inputBuf[idx++] = c;
+        }
+        if (idx >= 2 && inputBuf[idx - 2] == '\r' && inputBuf[idx - 1] == '\n')
+        {
+            inputBuf[idx] = '\0';
+            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+            xQueueSendFromISR(lineQueue, inputBuf, &xHigherPriorityTaskWoken);
+            if (xHigherPriorityTaskWoken)
+                portYIELD_FROM_ISR();
+            idx = 0;
+        }
+    }
+}
+void bridgeLoop(void *arg)
+{
+
+    char rxLine[128];
+    for (;;)
+    {
+        if (xQueueReceive(lineQueue, &rxLine, portMAX_DELAY) == pdTRUE)
+        {
+
+            String buffer = String(rxLine);
+            buffer.trim(); // remove whitespace
             if (buffer.length() > 0)
             {
-                if (buffer.startsWith("BRCMD"))//command received
+                if (buffer.startsWith("BRCMD")) // command received
                 {
                     if (buffer.indexOf("+") != -1)
                     {
-                        String cmd = buffer.substring(buffer.indexOf("+") + 1, buffer.indexOf(endLine));//extract command
-                        handleCommand(cmd);//handle command
+                        String cmd = buffer.substring(buffer.indexOf("+") + 1, buffer.indexOf(endLine)); // extract command
+                        handleCommand(cmd);                                                              // handle command
                     }
                     else
                     {
-                        listAvailableCommands();//list commands if no command specified
+                        listAvailableCommands(); // list commands if no command specified
                     }
                 }
-             
-                else//normal message
+                else // normal message
                 {
 
-                    if (autoSend)//check if autosend is enabled
-                                        {
-                                            uint16_t Id =  generateMessageId();
-                                            AddPendingMsg(Id);
-                    #ifdef ESP32
-                                            sendMsg(MSG, (const uint8_t*)peerAddress, &buffer,encENA,Id);//send message
-                    #elif defined(ESP8266)
-                                            sendMsg(MSG, peerAddress, &buffer);//send message
-                    #endif
-                    
-                                        }
+                    if (autoSend) // check if autosend is enabled
+                    {
+                        uint16_t Id = generateMessageId();
+                        AddPendingMsg(Id);
+                        sendMsg(MSG, (const uint8_t *)peerAddress, &buffer, encENA, Id); // send message
+                    }
                     else
                     {
                         logger.log(LOG_ERROR, "AutoSend is disabled.");
@@ -57,12 +75,8 @@ void bridgeLoop(void *arg)
             }
             buffer = "";
         }
-        else
-        {
-            buffer += c;
-        }
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
-    vTaskDelay(10 / portTICK_PERIOD_MS);//small delay to allow other tasks to run
 }
-}
+
 #endif

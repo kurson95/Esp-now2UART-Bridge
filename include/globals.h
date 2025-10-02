@@ -38,6 +38,7 @@ static const char commStart[2] = "=";
 
 QueueHandle_t blinkQueue;
 TaskHandle_t buttonTaskHandle;
+QueueHandle_t lineQueue;
 
 const long allowedBaudRates[] = {300, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 230400, 250000};
 const uint32_t holdTime = 2E3;
